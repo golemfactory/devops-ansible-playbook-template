@@ -1,0 +1,80 @@
+- name: Checkout git repo
+  git:
+    repo: "{{ example_web_service_git_repo }}"
+    version: "{{ example_web_service_version }}"
+    dest: "{{ ansible_user_dir }}/example_web_service"
+    accept_hostkey: yes
+  notify: Restart example web service backend
+
+- name: Create directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  loop:
+    - "{{ example_web_service_frontend_dir }}"
+
+# backend
+
+- name: Install backend venv
+  pip:
+    virtualenv: "{{ ansible_user_dir }}/example_web_service_backend_venv"
+    virtualenv_command: "/usr/bin/python3 -m venv"
+    requirements: "{{ ansible_user_dir }}/example_web_service/backend/requirements.txt"
+  notify: Restart example web service backend
+
+- name: Install gunicorn
+  pip:
+    virtualenv: "{{ ansible_user_dir }}/example_web_service_backend_venv"
+    virtualenv_command: "/usr/bin/python3 -m venv"
+    name:
+      - gunicorn
+      - uvicorn
+    state: latest
+  notify: Restart example web service backend
+
+- name: Create systemd unit directory
+  file:
+    # TODO: support XDG_CONFIG_HOME if someone actually uses it
+    path: "{{ ansible_user_dir }}/.config/systemd/user"
+    state: directory
+
+- name: Install example web service backend service
+  template:
+    src: example_web_service_backend.service.j2
+    dest: "{{ ansible_user_dir }}/.config/systemd/user/example_web_service_backend.service"
+  notify: Restart example web service backend
+
+- name: Install example web service backend script
+  template:
+    src: example_web_service_backend.sh.j2
+    dest: "{{ ansible_user_dir }}/example_web_service_backend.sh"
+    mode: +x
+  notify: Restart example web service backend
+
+- name: Start example web service backend service
+  systemd:
+    scope: user
+    daemon_reload: yes
+    name: example_web_service_backend
+    state: started
+    enabled: yes
+  register: example_web_service_backend_start
+
+# frontend
+
+- name: Build frontend
+  shell:
+    chdir: "{{ ansible_user_dir }}/example_web_service/frontend/"
+    cmd: |
+      set -e
+      npm install
+      npm run build
+
+- name: Update frontend files
+  synchronize:
+    src: "{{ ansible_user_dir }}/example_web_service/frontend/dist/"
+    dest: "{{ example_web_service_frontend_dir }}/"
+    compress: no
+    delete: yes
+  delegate_to: "{{ inventory_hostname }}"

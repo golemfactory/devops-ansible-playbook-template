@@ -1,0 +1,10 @@
+[Unit]
+Description=example web service backend
+
+[Service]
+Type=simple
+Restart=always
+ExecStart={{ ansible_user_dir }}/example_web_service_backend.sh
+
+[Install]
+WantedBy=default.target

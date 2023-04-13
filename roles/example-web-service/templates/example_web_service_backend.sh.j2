@@ -1,0 +1,39 @@
+#!/bin/bash
+
+die() {
+    echo "$@" >&2
+    exit 1
+}
+
+cd ~/{{ ya_requestor_name }}/
+
+. .env
+
+# set *_API_URL
+if [[ "${YAGNA_API_URL_IP}" == "0.0.0.0" ]]; then
+    YAGNA_CLIENT_API_IP="127.0.0.1"
+else
+    YAGNA_CLIENT_API_IP="${YAGNA_API_URL_IP}"
+fi
+YAGNA_CLIENT_API_URL="http://${YAGNA_CLIENT_API_IP}:${YAGNA_API_URL_PORT}"
+export YAGNA_MARKET_URL="${YAGNA_CLIENT_API_URL}/market-api/v1"
+export YAGNA_PAYMENT_URL="${YAGNA_CLIENT_API_URL}/payment-api/v1"
+export YAGNA_ACTIVITY_URL="${YAGNA_CLIENT_API_URL}/activity-api/v1"
+# end set *_API_URL
+
+export GSB_URL
+
+export YAGNA_APPKEY="$(yagna app-key create example_web_service_backend)"
+
+# yagna command must be run inside directory containing .env
+timeout 5m yagna payment fund
+yagna payment init --sender
+
+. ~/example_web_service_backend_venv/bin/activate
+
+cd ~/example_web_service/backend/
+exec {{ ansible_user_dir }}/example_web_service_backend_venv/bin/gunicorn \
+    --workers 4 \
+    --timeout 300 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    main:app

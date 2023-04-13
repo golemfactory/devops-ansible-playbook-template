@@ -1,0 +1,4 @@
+all:
+  hosts:
+    testvm:
+      ansible_user: vagrant

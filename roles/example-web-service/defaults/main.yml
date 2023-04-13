@@ -1,0 +1,4 @@
+example_web_service_git_repo: git@github.com:golemfactory/example-web-service.git
+example_web_service_version: 37acebfae942829f7e3716778664c226aa768b79
+
+example_web_service_frontend_dir: "{{ ansible_user_dir }}/example_web_service_frontend"

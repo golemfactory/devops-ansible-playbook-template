@@ -1,0 +1,9 @@
+[submodule "roles/nginx"]
+	path = roles/nginx
+	url = git@github.com:golemfactory/ansible-role-nginx.git
+[submodule "roles/ya-requestor"]
+	path = roles/ya-requestor
+	url = git@github.com:golemfactory/ansible-role-ya-requestor.git
+[submodule "roles/geerlingguy.nodejs"]
+	path = roles/geerlingguy.nodejs
+	url = https://github.com/geerlingguy/ansible-role-nodejs.git

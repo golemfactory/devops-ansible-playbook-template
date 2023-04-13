@@ -1,0 +1,8 @@
+- name: Restart example web service backend
+  systemd:
+    scope: user
+    daemon_reload: yes
+    name: example_web_service_backend
+    enabled: yes
+    state: restarted
+  when: (example_web_service_backend_start | default({})) is not changed

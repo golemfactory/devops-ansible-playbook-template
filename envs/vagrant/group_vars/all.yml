@@ -1,0 +1,6 @@
+nginx_config_file: nginx.conf
+nginx_enable_ssl: no
+
+example_web_service_frontend_dir: /var/www/example_web_service
+
+ya_requestor_name: example_web_service_requestor

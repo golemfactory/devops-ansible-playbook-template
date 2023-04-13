@@ -1,0 +1,75 @@
+- hosts: all
+  tags: [ufw]
+  become: yes
+  tasks:
+    - name: open ports in firewall
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop:
+        - 22
+        - 80
+        - 443
+        # yagna p2p
+        - 11500
+
+    - name: Enable firewall
+      ufw:
+        state: enabled
+
+- hosts: all
+  become: yes
+  pre_tasks:
+    - name: Install dependencies
+      apt:
+        update_cache: yes
+        name:
+          - python3-venv
+
+    - name: Create user
+      user:
+        name: golem
+        shell: /bin/bash
+
+    - name: Create ~/.ssh
+      file:
+        path: /home/golem/.ssh
+        state: directory
+        owner: golem
+        group: golem
+        mode: "700"
+
+    - name: getent
+      getent:
+        database: passwd
+
+    - name: Copy authorized_keys
+      copy:
+        remote_src: yes
+        # cannot use ansible_user_dir here, because it points to /root, because of "become: yes"
+        src: "{{ ansible_facts.getent_passwd[ansible_user][4] }}/.ssh/authorized_keys"
+        dest: /home/golem/.ssh/authorized_keys
+        owner: golem
+        group: golem
+        mode: "644"
+
+    - name: Create directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        recurse: yes
+        owner: golem
+        group: golem
+      loop:
+        - "{{ example_web_service_frontend_dir }}"
+  roles:
+    - role: nginx
+    - geerlingguy.nodejs
+
+- hosts: all
+  vars:
+    ansible_user: golem
+  roles:
+    - ya-requestor
+    - example-web-service
